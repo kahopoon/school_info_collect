@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 import urllib2
 import re
@@ -26,6 +27,8 @@ all_schoolinfo = []
 item_exception_list = []
 #log filename
 log_filename = "school_info.log"
+#output filename
+output_filename = time.strftime("%Y%m%d") + "_primary_school_info.csv"
 
 #initialize log function, output as (timestamp, scho info type, log type, log message)
 logger = logging.getLogger('P_SCHOOL_INFO')
@@ -62,8 +65,7 @@ def getRawData(input):
 #write every row of all_schoolinfo into csv
 def outputFile():
     headers = ['中文名稱','英文名稱','校網編號','地址','電話','電郵', '傳真', '網址', '校監／學校管理委員會主席', '是否已成立法團校董會', '校長', '學校類別', '學生性別', '辦學團體', '宗教', '創校年份', '校訓', '學校佔地面積', '一條龍中學', '直屬中學', '聯繫中學', '教學語言', '校車服務', '家長教師會', '舊生會/校友會', '法團校董會名稱']
-    file_name = time.strftime("%Y%m%d") + "_primary_school_info.csv"
-    with open(file_name,'wb') as f:
+    with open(output_filename,'wb') as f:
         f_csv = csv.writer(f)
         f.write(codecs.BOM_UTF8)
         f_csv.writerow(headers)
