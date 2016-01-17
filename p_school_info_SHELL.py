@@ -1,45 +1,61 @@
 # -*- coding: utf-8 -*-
-import sys
 import urllib2
 import re
 import codecs
 import csv
 import time
+import logging
 
 #content from
 request_url = "http://applications.chsc.hk/psp2015/sch_detail1.php?lang_id=2&sch_id="
-#sch_id sequence
+#sch_id initial sequence
 sequence = 1
 #maximum no data tolerate on continous sequence
-go_on_max = 50
+go_on_max = 10
 #count on no data continous sequence
 go_on = 0
-#exception item try max
-item_exception_max = 50
+#exception item max try
+item_exception_max = 5
+#exception try hold time in seconds
+item_exception_holdtime = 0.3
+#last known good collected data id
+last_good = 0
 #all data
 all_schoolinfo = []
+#item exception remain list
+item_exception_list = []
+#log filename
+log_filename = "school_info.log"
 
+#initialize log function, output as (timestamp, scho info type, log type, log message)
+logger = logging.getLogger('P_SCHOOL_INFO')
+logger.setLevel(logging.INFO)
+handler = logging.FileHandler(log_filename)
+handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(handler)
+    
 #put raw data row into 'raw_data_row' in list
 def getRawData(input):
-    global go_on
+    global go_on, last_good, item_exception_list
     item_try_remain = item_exception_max
-    while item_try_remain > 0:
+    while item_try_remain >= 0:
         try:
             html_open = urllib2.urlopen(request_url + str(input))
         except Exception:
-            #print "收集錯誤，重新嘗試......(" + str(item_exception_max - item_try_remain) + " 次後結束)"
             item_try_remain -= 1
+            if item_try_remain < 0:
+                item_exception_list.append(input)
+            time.sleep(item_exception_holdtime)  
             continue
         else:      
             html_read = html_open.read()
             html_data = unicode(html_read,'UTF-8').encode('UTF-8')  
             find_school_name = re.search('<td colspan="4" align="left"><span class="sch_detail_header">' + '(.+?)' + '</span>', html_data) 
             if find_school_name:
-                #print "找到 " + find_school_name.group(1).strip() + " !"
+                last_good = input
                 go_on = 0
                 return html_data
             else:
-                #print "ID: " + str(input) + " 資料空白， " + str(go_on_max - go_on) + " 項後結束"
                 go_on += 1
                 return None
 
@@ -52,7 +68,7 @@ def outputFile():
         f.write(codecs.BOM_UTF8)
         f_csv.writerow(headers)
         f_csv.writerows(all_schoolinfo)        
-    print "已輸出 " + str(len(all_schoolinfo)) + " 項紀錄至檔案 " + time.strftime("%Y%m%d") + ".csv (" + time.strftime("%H:%M:%S") + ")" 
+    logger.info("已輸出 " + str(len(all_schoolinfo)) + " 項紀錄至檔案 " + time.strftime("%Y%m%d") + ".csv")
            
 #get school info, encapsulate into tuple row, and append the row to all_schoolinfo
 def getInformation(input):
@@ -103,13 +119,21 @@ def getInformation(input):
         school_tLanguage, school_bus, school_pta, school_alumni, school_imcName))  
         all_schoolinfo.append(tuple(schoolinfo_row)) 
     sequence += 1
-    if go_on < go_on_max:
-        getInformation(sequence)
-        
+
+#tells data correctness before output
+def dataReport():
+    error_found = [s for s in item_exception_list if s < last_good]
+    if not error_found:
+        logger.info("沒有資料錯誤，準備輸出...")
+    else:
+        logger.error(error_found)
+        logger.error("以上 " + str(len(error_found)) + " 項錯誤資料未能修正，準備輸出")
+          
 def start():
-    print "開始收集資料，請稍候... (" + time.strftime("%H:%M:%S") + ")"
-    sys.stdout.flush()
-    getInformation(sequence)
+    logger.info("開始收集資料，請稍候...")
+    while go_on < go_on_max:
+        getInformation(sequence)
+    dataReport()
     outputFile()
     
 start()
