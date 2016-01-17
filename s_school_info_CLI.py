@@ -26,6 +26,8 @@ all_schoolinfo = []
 item_exception_list = []
 #log filename
 log_filename = "school_info.log"
+#output filename
+output_filename = time.strftime("%Y%m%d") + "_secondary_school_info.csv"
 
 #initialize log function, output as (timestamp, scho info type, log type, log message)
 logger = logging.getLogger('S_SCHOOL_INFO')
@@ -62,8 +64,7 @@ def getRawData(input):
 #write every row of all_schoolinfo into csv
 def outputFile():
     headers = ['中文名稱','英文名稱', '地址','電話','電郵', '傳真', '網址', '本區', '他區', '校監/ 校管會主席', '校長', '學校類別', '學生性別', '學校佔地面積', '辦學團體', '是否已成立法團校董會', '宗教', '創校年份', '校訓', '家長教師會', '學生會', '舊生會/校友會']
-    file_name = time.strftime("%Y%m%d") + "_secondary_school_info.csv"
-    with open(file_name,'wb') as f:
+    with open(output_filename,'wb') as f:
         f_csv = csv.writer(f)
         f.write(codecs.BOM_UTF8)
         f_csv.writerow(headers)
