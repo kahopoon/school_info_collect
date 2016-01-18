@@ -70,7 +70,7 @@ def outputFile():
         f.write(codecs.BOM_UTF8)
         f_csv.writerow(headers)
         f_csv.writerows(all_schoolinfo)        
-    logger.info("已輸出 " + str(len(all_schoolinfo)) + " 項紀錄至檔案 " + time.strftime("%Y%m%d") + ".csv")
+    logger.info("已輸出 " + str(len(all_schoolinfo)) + " 項紀錄至檔案 " + output_filename)
            
 #get school info, encapsulate into tuple row, and append the row to all_schoolinfo
 def getInformation(input):
@@ -132,7 +132,7 @@ def dataReport():
         logger.error("以上 " + str(len(error_found)) + " 項錯誤資料未能修正，準備輸出")
           
 def start():
-    logger.info("開始收集資料，請稍候...")
+    logger.info("開始收集小學資料，請稍候...")
     while go_on < go_on_max:
         getInformation(sequence)
     dataReport()
